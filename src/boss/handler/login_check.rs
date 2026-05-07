@@ -15,7 +15,7 @@ pub fn login_check() -> Result<Value, anyhow::Error> {
     Ok(output)
 }
 
-fn verify_login(page: &ChromiumPage) -> Result<(), anyhow::Error> {
+fn verify_login(page: &ChromiumPage) -> Result<Value, anyhow::Error> {
     page.get(BOSS_LOGIN_PAGE_URL)?;
     sleep_random_ms(1200, 2000);
     let body_text = fetch_via_page_js(page, BOSS_ACCOUNT_VERIFY_API)?;
@@ -42,7 +42,7 @@ fn build_fetch_script(url: &str) -> String {
         (async () => {{
             try {{
                 const response = await fetch({:?}, {{
-                    method: 'POST',
+                    method: 'GET',
                     credentials: 'include'
                 }});
                 const text = await response.text();
@@ -59,7 +59,7 @@ fn build_fetch_script(url: &str) -> String {
     )
 }
 
-fn parse_verify_response(body_text: &str) -> Result<(), anyhow::Error> {
+fn parse_verify_response(body_text: &str) -> Result<Value, anyhow::Error> {
     let root: serde_json::Value =
         serde_json::from_str(body_text).context("解析 token 校验 JSON 失败")?;
 
@@ -74,18 +74,20 @@ fn parse_verify_response(body_text: &str) -> Result<(), anyhow::Error> {
         ));
     }
 
-    match root.get("zpData").and_then(|v| v.as_bool()) {
-        Some(true) => Ok(()),
-        Some(false) => Err(anyhow!("token校验失败")),
-        None => Err(anyhow!("响应缺少布尔类型 zpData")),
+    let zp_data = root.get("zpData").context("响应缺少 zpData")?;
+    if zp_data.is_null() {
+        return Err(anyhow!("响应中的 zpData 为空"));
     }
+
+    Ok(root)
 }
 
-fn build_login_check_output(verify_result: Result<(), anyhow::Error>) -> serde_json::Value {
+fn build_login_check_output(verify_result: Result<Value, anyhow::Error>) -> serde_json::Value {
     match verify_result {
-        Ok(()) => json!({
+        Ok(data) => json!({
             "success": true,
             "message": "登录成功",
+            "data": data,
         }),
         Err(error) => json!({
             "success": false,

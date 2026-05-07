@@ -2,7 +2,7 @@ use std::path::Path;
 
 use anyhow::anyhow;
 use boss_mcp::{
-    boss::{handler::login::login, model::LoginType},
+    boss::{handler::login, model::LoginType},
     browser,
     config::load_or_create,
 };
