@@ -1,0 +1,18 @@
+services:
+  boss-mcp-login-dn:
+    image: boss-mcp-login
+    container_name: boss-mcp-login-dn
+    volumes:
+      - ../dn_data:/data
+
+  boss-mcp-login-yh:
+    image: boss-mcp-login
+    container_name: boss-mcp-login-yh
+    volumes:
+      - ../yh_data:/data
+
+  boss-mcp-login-wd:
+    image: boss-mcp-login
+    container_name: boss-mcp-login-wd
+    volumes:
+      - ../wd_data:/data
