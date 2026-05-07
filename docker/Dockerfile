@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
-COPY config.yaml ./config.yaml
+COPY docker/config.yaml ./config.yaml
 
 RUN cargo build --release --bin login --bin login_check && \
     find /app/target/release -maxdepth 1 -type f -name "*.d" -delete

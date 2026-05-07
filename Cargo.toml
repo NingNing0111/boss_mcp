@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
-rust_drission = "0.2"
+rust_drission = "0.2.1"
 anyhow = "1.0.102"
 base64 = "0.22.1"
 serde_json = "1"
