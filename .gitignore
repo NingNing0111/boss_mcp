@@ -1,6 +1,9 @@
 /target
 default
-.claude
+# .claude
+settings.local.json
+.omc
+worktrees
 superpowers
 *data
 qr_code.png
