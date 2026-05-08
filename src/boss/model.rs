@@ -130,6 +130,43 @@ impl SalaryDebugInfo {
     }
 }
 
+
+// 未读的聊天消息
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UnreadChat {
+    /// 列表中的索引（从 0 开始）
+    pub idx: usize,
+    /// 招聘者姓名，如 "宋昊"
+    pub name: String,
+    /// 公司名称，如 "科锐国际"
+    pub company: String,
+    /// 职位/头衔，如 "猎头顾问"
+    pub title: String,
+    /// 未读消息数量
+    pub unread_count: u32,
+    /// 最近消息时间，如 "19:11" 或 "04月27日"
+    pub time: String,
+    /// 最近一条消息内容
+    pub last_message: String,
+    /// 头像图片 URL
+    pub avatar_url: String,
+}
+
+/// 聊天消息（来自 /wapi/zpchat/geek/historyMsg 接口）
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ChatMessage {
+    /// 消息 ID
+    pub mid: i64,
+    /// 是否是对方发来的（true = 招聘者发送，false = 自己发送）
+    pub received: bool,
+    /// 消息文本内容（仅 body.type == 1 的普通文本消息有值，其余为空字符串）
+    pub text: String,
+    /// 发送时间戳（毫秒）
+    pub time: i64,
+    /// 发送方名称
+    pub from_name: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::SalaryDebugInfo;

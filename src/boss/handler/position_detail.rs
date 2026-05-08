@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use anyhow::Context;
+use rust_drission::utils::sleep_random_ms;
 use serde::Deserialize;
 
 use crate::{boss::model::PositionDetail, browser};
@@ -99,6 +100,18 @@ fn parse_detail(js_result: &serde_json::Value) -> Result<PositionDetail, anyhow:
         recruiter_title: raw.recruiter_title,
         recruiter_active_time: raw.recruiter_active_time,
         recruiter_company: raw.recruiter_company,
+    })
+}
+
+// 开始沟通
+pub fn start_chat(detail_url: &str) -> Result<(), anyhow::Error> {
+    browser::with_browser(|page| {
+        page.get(detail_url)?;
+
+        sleep_random_ms(1000, 1200);
+        page.click(".btn-container .btn-startchat")?;
+
+        Ok(())
     })
 }
 
