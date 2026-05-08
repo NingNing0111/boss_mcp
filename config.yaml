@@ -1,3 +1,3 @@
 browser_exe_path: ""
-user_data_dir: "data/session"
-qr_output_path: "data/qr/qr_code.png"
+user_data_dir: "D:\\Code\\GithubProject\\boss_mcp\\data\\session"
+qr_output_path: "D:\\Code\\GithubProject\\boss_mcp\\data\\session\\qr_code.png"

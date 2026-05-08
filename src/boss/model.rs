@@ -90,3 +90,67 @@ impl BossAccountInfo {
         self.is_648_vip
     }
 }
+
+// 岗位信息
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PositionSimpleInfo {
+    pub job_name: String,
+    pub salary: String,
+    pub tags: Vec<String>,
+    pub company_name: String,
+    pub company_location: String,
+    pub job_detail_url: String,
+    pub company_url: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PositionDetail {
+    pub keywords: Vec<String>,
+    pub job_description: String,
+    pub recruiter_name: String,
+    pub recruiter_title: String,
+    pub recruiter_active_time: String,
+    pub recruiter_company: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SalaryDebugInfo {
+    pub text_content: String,
+    pub inner_text: String,
+    pub font_family: String,
+    pub html: String,
+}
+
+impl SalaryDebugInfo {
+    pub fn format_output(&self) -> String {
+        format!(
+            "textContent: {:?}\ninnerText: {:?}\nfontFamily: {:?}\nhtml: {:?}",
+            self.text_content, self.inner_text, self.font_family, self.html,
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SalaryDebugInfo;
+
+    #[test]
+    fn formats_salary_debug_output_lines() {
+        let debug_info = SalaryDebugInfo {
+            text_content: "12-20K".to_string(),
+            inner_text: "12-20K".to_string(),
+            font_family: "boss-serif".to_string(),
+            html: r#"<span class="job-salary">12-20K</span>"#.to_string(),
+        };
+
+        assert_eq!(
+            debug_info.format_output(),
+            concat!(
+                "textContent: \"12-20K\"\n",
+                "innerText: \"12-20K\"\n",
+                "fontFamily: \"boss-serif\"\n",
+                "html: \"<span class=\\\"job-salary\\\">12-20K</span>\""
+            )
+        );
+    }
+}

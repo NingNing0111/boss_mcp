@@ -451,9 +451,9 @@ dependencies = [
 
 [[package]]
 name = "rust_drission"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b135f2f353cc6483875c5cedcf94337dd7cf6adfbd5a137ceb72182c86fddf9c"
+checksum = "0a1b43655d9589bfa78c9029a8ed5b16fb45615f2614eb9819842b7c25a9fd21"
 dependencies = [
  "base64 0.21.7",
  "serde",
