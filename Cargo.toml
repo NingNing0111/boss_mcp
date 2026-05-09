@@ -10,3 +10,12 @@ rust_drission = "0.2.2"
 anyhow = "1.0.102"
 base64 = "0.22.1"
 serde_json = "1"
+rig-core = "0.11"
+tokio = { version = "1", features = ["rt", "macros"] }
+thiserror = "2"
+schemars = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+async-trait = "0.1"
+
+[dev-dependencies]
+tempfile = "3"
