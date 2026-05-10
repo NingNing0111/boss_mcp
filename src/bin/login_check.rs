@@ -1,11 +1,7 @@
 use std::path::Path;
 
-use anyhow::{ anyhow};
-use boss_mcp::{
-    boss::{ handler::login_check},
-    browser,
-    config::load_or_create,
-};
+use anyhow::anyhow;
+use boss_mcp::{boss::handler::login_check, browser, config::load_or_create};
 
 pub fn main() -> Result<(), anyhow::Error> {
     let config = load_or_create(Path::new("config.yaml"))
@@ -18,4 +14,3 @@ pub fn main() -> Result<(), anyhow::Error> {
 
     Ok(())
 }
-

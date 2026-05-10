@@ -2,7 +2,7 @@ use std::path::Path;
 
 use anyhow::anyhow;
 use boss_mcp::{
-    boss::handler::{ send_greeting_message, start_chat},
+    boss::handler::{send_greeting_message, start_chat},
     browser,
     config::load_or_create,
 };

@@ -25,10 +25,11 @@ struct SimpleIndustryNode {
 fn main() -> Result<()> {
     let source = fs::read_to_string(INPUT_PATH)
         .with_context(|| format!("读取行业文件失败: {INPUT_PATH}"))?;
-    let nodes: Vec<IndustryNode> = serde_json::from_str(&source)
-        .with_context(|| format!("解析行业文件失败: {INPUT_PATH}"))?;
+    let nodes: Vec<IndustryNode> =
+        serde_json::from_str(&source).with_context(|| format!("解析行业文件失败: {INPUT_PATH}"))?;
 
-    let simplified: Vec<SimpleIndustryNode> = nodes.into_iter().map(SimpleIndustryNode::from).collect();
+    let simplified: Vec<SimpleIndustryNode> =
+        nodes.into_iter().map(SimpleIndustryNode::from).collect();
     let output = serde_json::to_string_pretty(&simplified).context("序列化简化行业数据失败")?;
 
     if let Some(parent) = Path::new(OUTPUT_PATH).parent() {
@@ -47,12 +48,9 @@ impl From<IndustryNode> for SimpleIndustryNode {
         Self {
             code: node.code,
             name: node.name,
-            sub_level_model_list: node.sub_level_model_list.map(|children| {
-                children
-                    .into_iter()
-                    .map(SimpleIndustryNode::from)
-                    .collect()
-            }),
+            sub_level_model_list: node
+                .sub_level_model_list
+                .map(|children| children.into_iter().map(SimpleIndustryNode::from).collect()),
         }
     }
 }

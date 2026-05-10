@@ -47,15 +47,18 @@ fn create_browser(config: &AppConfig) -> Result<ChromiumPage, BrowserError> {
 }
 
 fn build_browser_config(config: &AppConfig) -> BrowserConfig {
+    let user_data = config.user_data_dir();
+    println!("{}", user_data);
     let mut browser_config = BrowserConfig::new()
         .headless(false)
-        .set_argument("--no-sandbox", None::<&str>);
+        .set_argument("--no-sandbox", None::<&str>)
+        .user_data_dir(user_data);
 
     if let Some(path) = config.browser_exe_path() {
         browser_config = browser_config.chrome_path(path);
     }
 
-    browser_config.user_data_dir(config.user_data_dir())
+    browser_config
 }
 
 struct BrowserState<T> {
@@ -111,6 +114,7 @@ impl<T> BrowserState<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::McpConfig;
     use std::sync::Arc;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::thread;
@@ -253,6 +257,7 @@ mod tests {
             browser_exe_path: None,
             user_data_dir: Some("profile-a".to_string()),
             qr_output_path: Some("qr_code.png".to_string()),
+            mcp: McpConfig::default(),
         };
 
         let browser_config = build_browser_config(&config);
@@ -282,6 +287,7 @@ mod tests {
             browser_exe_path: Some(browser_exe_path.to_string()),
             user_data_dir: Some(user_data_dir.to_string()),
             qr_output_path: Some("qr_code.png".to_string()),
+            mcp: McpConfig::default(),
         }
     }
 }

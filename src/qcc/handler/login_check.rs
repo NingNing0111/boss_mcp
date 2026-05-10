@@ -1,5 +1,5 @@
 // 企查查 登录检查
-use crate::{browser};
+use crate::browser;
 use rust_drission::utils::sleep_random_ms;
 
 pub fn login_check() -> Result<String, anyhow::Error> {
@@ -11,7 +11,6 @@ pub fn login_check() -> Result<String, anyhow::Error> {
             return Ok("登录状态：成功");
         }
         return Ok("登录状态：未登录");
-
     })?;
 
     Ok(status_str.to_string())

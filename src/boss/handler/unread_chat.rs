@@ -4,7 +4,10 @@ use anyhow::{Context, anyhow};
 use rust_drission::{ChromiumPage, utils::sleep_random_ms};
 
 use crate::{
-    boss::{BOSS_CHAT_URL, model::{ChatMessage, UnreadChat}},
+    boss::{
+        BOSS_CHAT_URL,
+        model::{ChatMessage, UnreadChat},
+    },
     browser,
 };
 
@@ -145,8 +148,7 @@ pub fn get_unread_chat_message(idx: usize) -> Result<Vec<ChatMessage>, anyhow::E
 //   第一条 body.type == 8 的消息携带 body.jobDesc.boss.uid（招聘者 uid）。
 //   后续每条消息：from.uid == boss_uid 则 received=true（招聘者发来），否则 received=false（自己发送）。
 fn parse_chat_messages(body: &str) -> Result<Vec<ChatMessage>, anyhow::Error> {
-    let root: serde_json::Value =
-        serde_json::from_str(body).context("historyMsg JSON 解析失败")?;
+    let root: serde_json::Value = serde_json::from_str(body).context("historyMsg JSON 解析失败")?;
 
     let code = root.get("code").and_then(|v| v.as_i64()).unwrap_or(-1);
     if code != 0 {
@@ -168,7 +170,8 @@ fn parse_chat_messages(body: &str) -> Result<Vec<ChatMessage>, anyhow::Error> {
     let boss_uid: Option<i64> = messages.iter().find_map(|msg| {
         let body_type = msg.pointer("/body/type").and_then(|v| v.as_i64())?;
         if body_type == 8 {
-            msg.pointer("/body/jobDesc/boss/uid").and_then(|v| v.as_i64())
+            msg.pointer("/body/jobDesc/boss/uid")
+                .and_then(|v| v.as_i64())
         } else {
             None
         }
@@ -201,7 +204,13 @@ fn parse_chat_messages(body: &str) -> Result<Vec<ChatMessage>, anyhow::Error> {
                 .unwrap_or("")
                 .to_string();
 
-            Some(ChatMessage { mid, received, text, time, from_name })
+            Some(ChatMessage {
+                mid,
+                received,
+                text,
+                time,
+                from_name,
+            })
         })
         .collect();
 
@@ -229,7 +238,10 @@ mod tests {
         assert_eq!(chats[0].unread_count, 2);
         assert_eq!(chats[0].time, "19:11");
         assert_eq!(chats[0].last_message, "您正在与Boss宋昊沟通");
-        assert_eq!(chats[0].avatar_url, "https://img.bosszhipin.com/example.jpg");
+        assert_eq!(
+            chats[0].avatar_url,
+            "https://img.bosszhipin.com/example.jpg"
+        );
     }
 
     #[test]

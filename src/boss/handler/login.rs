@@ -13,7 +13,7 @@ use serde_json::Value;
 // 验证码登录/注册
 // BOSS直聘APP扫码登录
 pub fn login(tp: LoginType, config: &AppConfig) -> Result<PathBuf, anyhow::Error> {
-    let qr_path = browser::with_browser(|page| {
+    let output_path = browser::with_browser(|page| {
         page.get(BOSS_LOGIN_PAGE_URL)?;
         sleep_random_ms(800, 1000);
         let title_ele = page.ele(".title")?;
@@ -28,7 +28,7 @@ pub fn login(tp: LoginType, config: &AppConfig) -> Result<PathBuf, anyhow::Error
         page.wait(".qr-img-box", Duration::from_secs(5))?;
         save_qr_image(page, config.qr_output_path())
     })?;
-    Ok(qr_path)
+    Ok(output_path)
 }
 
 fn save_qr_image(

@@ -14,8 +14,9 @@ struct PositionNode {
     sub_level_model_list: Option<Vec<PositionNode>>,
 }
 
-static POSITION_DATA: LazyLock<Vec<PositionNode>> =
-    LazyLock::new(|| serde_json::from_str(POSITION_JSON).expect("Failed to parse position.simple.json"));
+static POSITION_DATA: LazyLock<Vec<PositionNode>> = LazyLock::new(|| {
+    serde_json::from_str(POSITION_JSON).expect("Failed to parse position.simple.json")
+});
 
 pub fn get_code_by_name(name: &str) -> Option<u64> {
     list_all_positions()

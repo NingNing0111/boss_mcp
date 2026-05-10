@@ -25,8 +25,8 @@ struct SimplePositionNode {
 fn main() -> Result<()> {
     let source = fs::read_to_string(INPUT_PATH)
         .with_context(|| format!("读取职位文件失败: {INPUT_PATH}"))?;
-    let nodes: Vec<PositionNode> = serde_json::from_str(&source)
-        .with_context(|| format!("解析职位文件失败: {INPUT_PATH}"))?;
+    let nodes: Vec<PositionNode> =
+        serde_json::from_str(&source).with_context(|| format!("解析职位文件失败: {INPUT_PATH}"))?;
 
     let simplified: Vec<SimplePositionNode> =
         nodes.into_iter().map(SimplePositionNode::from).collect();
@@ -48,12 +48,9 @@ impl From<PositionNode> for SimplePositionNode {
         Self {
             code: node.code,
             name: node.name,
-            sub_level_model_list: node.sub_level_model_list.map(|children| {
-                children
-                    .into_iter()
-                    .map(SimplePositionNode::from)
-                    .collect()
-            }),
+            sub_level_model_list: node
+                .sub_level_model_list
+                .map(|children| children.into_iter().map(SimplePositionNode::from).collect()),
         }
     }
 }

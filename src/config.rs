@@ -4,10 +4,23 @@ use std::path::Path;
 
 use serde::Deserialize;
 
-const DEFAULT_CONFIG_YAML: &str =
-    "browser_exe_path: \"\"\nuser_data_dir: \"default\"\nqr_output_path: \"qr_code.png\"\n";
+const DEFAULT_CONFIG_YAML: &str = "\
+browser_exe_path: \"\"
+user_data_dir: \"default\"
+qr_output_path: \"qr_code.png\"
+
+# MCP 服务端配置
+mcp:
+  # 传输类型: stdio | streamable_http
+  transport: streamable_http
+  # 仅 streamable_http 模式使用
+  http_port: 8080
+  # HTTP 监听地址
+  http_host: \"127.0.0.1\"
+";
 const DEFAULT_USER_DATA_DIR: &str = "default";
 const DEFAULT_QR_OUTPUT_PATH: &str = "qr_code.png";
+
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
@@ -15,6 +28,38 @@ pub struct AppConfig {
     pub browser_exe_path: Option<String>,
     pub user_data_dir: Option<String>,
     pub qr_output_path: Option<String>,
+    pub mcp: McpConfig,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
+pub struct McpConfig {
+    pub transport: TransportType,
+    pub http_port: u16,
+    pub http_host: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TransportType {
+    Stdio,
+    StreamableHttp,
+}
+
+impl Default for McpConfig {
+    fn default() -> Self {
+        Self {
+            transport: TransportType::StreamableHttp,
+            http_port: 8080,
+            http_host: "127.0.0.1".to_string(),
+        }
+    }
+}
+
+impl Default for TransportType {
+    fn default() -> Self {
+        Self::StreamableHttp
+    }
 }
 
 impl Default for AppConfig {
@@ -23,6 +68,7 @@ impl Default for AppConfig {
             browser_exe_path: None,
             user_data_dir: Some(DEFAULT_USER_DATA_DIR.to_string()),
             qr_output_path: Some(DEFAULT_QR_OUTPUT_PATH.to_string()),
+            mcp: McpConfig::default(),
         }
     }
 }

@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use schemars;
 
 // Boss 登录类型
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 pub enum LoginType {
     // 手机号登录
     Phone,
@@ -129,7 +130,6 @@ impl SalaryDebugInfo {
         )
     }
 }
-
 
 // 未读的聊天消息
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -2,8 +2,8 @@ use anyhow::Context;
 use rust_drission::utils::sleep_random_ms;
 use serde::Deserialize;
 
-use crate::{browser, qcc::model::CompanyInfo};
 use crate::qcc::QCC_SEARCH;
+use crate::{browser, qcc::model::CompanyInfo};
 
 pub fn search_company(keyword: &str) -> Result<Vec<CompanyInfo>, anyhow::Error> {
     let url = QCC_SEARCH.replace("{}", keyword);
@@ -112,8 +112,7 @@ fn parse_companies(js_result: &serde_json::Value) -> Result<Vec<CompanyInfo>, an
         .or_else(|| js_result.get("value").and_then(|v| v.as_str()))
         .context("JS 返回值不是字符串")?;
 
-    let raw: Vec<RawCompany> =
-        serde_json::from_str(json_str).context("公司信息 JSON 解析失败")?;
+    let raw: Vec<RawCompany> = serde_json::from_str(json_str).context("公司信息 JSON 解析失败")?;
 
     Ok(raw
         .into_iter()

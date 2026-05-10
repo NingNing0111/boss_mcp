@@ -24,7 +24,10 @@ pub fn get_code_by_name(name: &str) -> i64 {
 }
 
 pub fn get_province_code_by_name(name: &str) -> Option<i64> {
-    SITE_DATA.iter().find(|model| model.name == name).map(|model| model.code)
+    SITE_DATA
+        .iter()
+        .find(|model| model.name == name)
+        .map(|model| model.code)
 }
 
 pub fn get_city_code_by_name(name: &str) -> Option<i64> {
@@ -68,7 +71,10 @@ pub fn get_cities_by_province(province_name: &str) -> Vec<String> {
 }
 
 pub fn get_all_cities() -> Vec<String> {
-    all_city_entries().into_iter().map(|entry| entry.path).collect()
+    all_city_entries()
+        .into_iter()
+        .map(|entry| entry.path)
+        .collect()
 }
 
 pub fn list_all_provinces() -> Vec<CodeName<i64>> {

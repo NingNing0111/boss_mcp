@@ -63,7 +63,9 @@ fn debug_salary_font(search_url: &str) -> Result<SalaryDebugInfo, anyhow::Error>
     Ok(salary_info)
 }
 
-fn parse_salary_debug_info(js_result: &serde_json::Value) -> Result<SalaryDebugInfo, anyhow::Error> {
+fn parse_salary_debug_info(
+    js_result: &serde_json::Value,
+) -> Result<SalaryDebugInfo, anyhow::Error> {
     let json_str = js_result
         .as_str()
         .or_else(|| js_result.get("value").and_then(|value| value.as_str()))

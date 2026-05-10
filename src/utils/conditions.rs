@@ -122,13 +122,33 @@ macro_rules! code_name_lookup {
     };
 }
 
-code_name_lookup!(get_job_type_code_by_name, get_job_type_name_by_code, list_job_types);
-code_name_lookup!(get_experience_code_by_name, get_experience_name_by_code, list_experiences);
-code_name_lookup!(get_degree_code_by_name, get_degree_name_by_code, list_degrees);
+code_name_lookup!(
+    get_job_type_code_by_name,
+    get_job_type_name_by_code,
+    list_job_types
+);
+code_name_lookup!(
+    get_experience_code_by_name,
+    get_experience_name_by_code,
+    list_experiences
+);
+code_name_lookup!(
+    get_degree_code_by_name,
+    get_degree_name_by_code,
+    list_degrees
+);
 code_name_lookup!(get_scale_code_by_name, get_scale_name_by_code, list_scales);
 code_name_lookup!(get_stage_code_by_name, get_stage_name_by_code, list_stages);
-code_name_lookup!(get_pay_type_code_by_name, get_pay_type_name_by_code, list_pay_types);
-code_name_lookup!(get_part_time_code_by_name, get_part_time_name_by_code, list_part_times);
+code_name_lookup!(
+    get_pay_type_code_by_name,
+    get_pay_type_name_by_code,
+    list_pay_types
+);
+code_name_lookup!(
+    get_part_time_code_by_name,
+    get_part_time_name_by_code,
+    list_part_times
+);
 
 pub fn get_salary_code_by_name(name: &str) -> Option<u64> {
     CONDITIONS_DATA
@@ -164,11 +184,15 @@ mod tests {
 
     #[test]
     fn lists_group_and_searches() {
-        assert!(list_filter_group("degreeList")
-            .iter()
-            .any(|item| item.name == "本科"));
-        assert!(search_filter_value("salaryList", "5-10")
-            .iter()
-            .any(|item| item.code == 404));
+        assert!(
+            list_filter_group("degreeList")
+                .iter()
+                .any(|item| item.name == "本科")
+        );
+        assert!(
+            search_filter_value("salaryList", "5-10")
+                .iter()
+                .any(|item| item.code == 404)
+        );
     }
 }

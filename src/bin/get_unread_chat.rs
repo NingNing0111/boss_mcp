@@ -1,7 +1,11 @@
 use std::path::Path;
 
 use anyhow::anyhow;
-use boss_mcp::{boss::handler::{get_unread_chat, get_unread_chat_message}, browser, config::load_or_create};
+use boss_mcp::{
+    boss::handler::{get_unread_chat, get_unread_chat_message},
+    browser,
+    config::load_or_create,
+};
 
 pub fn main() -> Result<(), anyhow::Error> {
     let config = load_or_create(Path::new("config.yaml"))
@@ -14,5 +18,3 @@ pub fn main() -> Result<(), anyhow::Error> {
     println!("{:?}", chat_messages);
     Ok(())
 }
-
-

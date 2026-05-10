@@ -3,9 +3,7 @@ use crate::utils::{
         self, get_degree_code_by_name, get_experience_code_by_name, get_job_type_code_by_name,
         get_salary_code_by_name, get_scale_code_by_name, get_stage_code_by_name,
     },
-    industry,
-    position,
-    site,
+    industry, position, site,
 };
 
 pub const BOSS_JOB_SEARCH_URL: &str = "https://www.zhipin.com/web/geek/jobs";
@@ -88,7 +86,9 @@ pub fn build_job_search_url(params: &JobSearchParams) -> String {
     }
 }
 
-pub fn resolve_job_search_names(params: &JobSearchNameParams) -> Result<JobSearchParams, Vec<String>> {
+pub fn resolve_job_search_names(
+    params: &JobSearchNameParams,
+) -> Result<JobSearchParams, Vec<String>> {
     let mut errors = Vec::new();
     let mut resolved = JobSearchParams::default();
 
@@ -164,7 +164,9 @@ pub fn resolve_job_search_names(params: &JobSearchNameParams) -> Result<JobSearc
     }
 }
 
-pub fn build_job_search_url_from_names(params: &JobSearchNameParams) -> Result<String, Vec<String>> {
+pub fn build_job_search_url_from_names(
+    params: &JobSearchNameParams,
+) -> Result<String, Vec<String>> {
     resolve_job_search_names(params).map(|resolved| build_job_search_url(&resolved))
 }
 
@@ -184,8 +186,9 @@ pub fn validate_job_search_params(params: &JobSearchParams) -> Vec<String> {
     }
 
     if let Some(code) = params.job_type {
-        if get_job_type_code_by_name(&conditions::get_job_type_name_by_code(code).unwrap_or_default())
-            != Some(code)
+        if get_job_type_code_by_name(
+            &conditions::get_job_type_name_by_code(code).unwrap_or_default(),
+        ) != Some(code)
         {
             errors.push(format!("jobType code 无效: {}", code));
         }
@@ -200,8 +203,9 @@ pub fn validate_job_search_params(params: &JobSearchParams) -> Vec<String> {
     }
 
     if let Some(code) = params.experience {
-        if get_experience_code_by_name(&conditions::get_experience_name_by_code(code).unwrap_or_default())
-            != Some(code)
+        if get_experience_code_by_name(
+            &conditions::get_experience_name_by_code(code).unwrap_or_default(),
+        ) != Some(code)
         {
             errors.push(format!("experience code 无效: {}", code));
         }

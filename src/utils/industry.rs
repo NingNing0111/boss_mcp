@@ -116,10 +116,16 @@ mod tests {
 
     #[test]
     fn lists_top_and_sub_industries() {
-        assert!(list_top_industries().iter().any(|item| item.name == "互联网/AI"));
-        assert!(list_sub_industries("互联网/AI")
-            .iter()
-            .any(|item| item.name == "人工智能"));
+        assert!(
+            list_top_industries()
+                .iter()
+                .any(|item| item.name == "互联网/AI")
+        );
+        assert!(
+            list_sub_industries("互联网/AI")
+                .iter()
+                .any(|item| item.name == "人工智能")
+        );
     }
 
     #[test]

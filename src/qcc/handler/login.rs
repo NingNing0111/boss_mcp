@@ -1,19 +1,14 @@
-use std::{
-    fs,
-    path::{ PathBuf},
-    time::Duration,
-};
+use std::{fs, path::PathBuf, time::Duration};
 
+use crate::{browser, qcc::QCC_SITE_URL};
 use anyhow::{Context, anyhow};
 use base64::Engine;
-use crate::{browser, qcc::QCC_SITE_URL};
 use rust_drission::{ChromiumPage, utils::sleep_random_ms};
 use serde_json::Value;
 
 use crate::config::AppConfig;
 
 pub fn login(config: &AppConfig) -> Result<PathBuf, anyhow::Error> {
-
     let qr_output_path = config.qr_output_path().to_string();
 
     let output_path = browser::with_browser(|page| {
@@ -24,7 +19,6 @@ pub fn login(config: &AppConfig) -> Result<PathBuf, anyhow::Error> {
         page.wait(".qcc-login-qrcode-area canvas", Duration::from_secs(5))?;
         save_qr_image(page, &qr_output_path)
     })?;
-
     Ok(output_path)
 }
 
