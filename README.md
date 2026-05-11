@@ -7,6 +7,7 @@
 ## 功能概览
 
 ### Boss 直聘能力
+
 - 登录与登录状态检查（扫码/手机号流程入口）
 - 职位搜索（`search_positions`）
 - 职位详情解析（`get_job_detail`）
@@ -15,11 +16,13 @@
 - 在线简历发送（`send_resume`）
 
 ### 企查查能力
+
 - 登录与登录状态检查（`qcc_login` / `check_qcc_login`）
 - 企业关键词搜索（`search_qcc_company`）
 - 企业详情解析（`get_qcc_company_detail`）
 
 ### 查询辅助能力
+
 - 城市编码查询（`search_cities`）
 - 行业编码查询（`search_industries`）
 - 岗位编码查询（`search_position_codes`）
@@ -46,6 +49,7 @@ src/
 ```
 
 运行模式：
+
 - `streamable_http`（默认）：启动 HTTP MCP 服务（默认 `127.0.0.1:8080`）
 - `stdio`：标准输入输出模式（用于本地进程集成）
 
@@ -56,6 +60,20 @@ src/
 - Rust 1.85+（建议使用最新 stable）
 - 可用的 Chromium 内核浏览器（Chrome / Edge / Chromium）
 - macOS / Linux / Windows
+
+---
+
+## 效果预览
+
+![](docs/images/1.png)
+
+![](docs/images/2.png)
+
+![](docs/images/3.png)
+
+![](docs/images/4.png)
+
+![](docs/images/5.png)
 
 ---
 
@@ -84,6 +102,7 @@ cargo run
 ```
 
 默认日志会显示：
+
 - MCP HTTP 地址（例如 `http://127.0.0.1:8080`）
 - 二维码静态资源前缀（例如 `http://127.0.0.1:8080/static/qr/`）
 
@@ -125,6 +144,7 @@ mcp:
 ## MCP 工具清单
 
 ### Boss 直聘
+
 - `check_boss_login`
 - `boss_login`
 - `search_positions`
@@ -136,12 +156,14 @@ mcp:
 - `get_chat_messages`
 
 ### 企查查
+
 - `check_qcc_login`
 - `qcc_login`
 - `search_qcc_company`
 - `get_qcc_company_detail`
 
 ### 辅助查询
+
 - `search_cities`
 - `search_industries`
 - `search_position_codes`
@@ -152,6 +174,7 @@ mcp:
 ## 常见业务流程
 
 ### Boss 职位沟通流程
+
 1. `check_boss_login`
 2. 未登录则 `boss_login` 并完成扫码/验证
 3. `search_positions`
@@ -160,6 +183,7 @@ mcp:
 6. `send_message` / `send_resume`
 
 ### 企查查企业查询流程
+
 1. `check_qcc_login`
 2. 未登录则 `qcc_login`
 3. `search_qcc_company`
@@ -186,6 +210,7 @@ cargo run --bin qcc_search_company
 ```
 
 可用独立二进制：
+
 - `login`
 - `login_check`
 - `qcc_login`
@@ -201,7 +226,123 @@ cargo run --bin qcc_search_company
 
 ## Docker（可选）
 
-仓库包含 `docker/` 目录，可用于容器化部署配置（按你的运行环境调整）。
+项目已内置 Docker 部署文件：
+
+- Compose: [docker/docker-compose.yml](docker/docker-compose.yml)
+- 运行配置: [docker/config.yaml](docker/config.yaml)
+- 镜像构建: [docker/Dockerfile](docker/Dockerfile)
+
+### 1. 本地部署
+
+#### 1) 准备持久化目录
+
+在项目根目录执行：
+
+```bash
+mkdir -p docker/data/session docker/data/qr
+```
+
+#### 2) 启动服务
+
+```bash
+cd docker
+docker compose up -d --build
+```
+
+#### 3) 查看状态与日志
+
+```bash
+docker compose ps
+docker compose logs -f boss_mcp
+```
+
+#### 4) 访问地址
+
+- 健康检查：`http://127.0.0.1:8080/`
+- MCP 服务：`http://127.0.0.1:8080/mcp`
+- 二维码静态资源：`http://127.0.0.1:8080/static/qr/`
+
+### 2. 服务器部署（VPS/云主机）
+
+#### 1) 前置要求
+
+- 已安装 Docker 与 Docker Compose
+- 已放行服务器防火墙端口（默认 `8080`）
+
+#### 2) 拉取并启动
+
+```bash
+git clone <your-repo-url>
+cd boss_mcp
+mkdir -p docker/data/session docker/data/qr
+cd docker
+docker compose up -d --build
+```
+
+#### 3) 开机自启
+
+`docker-compose.yml` 已配置 `restart: unless-stopped`，主机重启后容器会自动拉起。
+
+### 3. 端口、卷与配置说明
+
+#### 端口映射
+
+[docker/docker-compose.yml](docker/docker-compose.yml)：
+
+- `8080:8080`：宿主机 `8080` 映射到容器 `8080`
+
+#### 数据卷
+
+- `./config.yaml:/app/config.yaml:ro`：挂载配置文件（只读）
+- `./data/session:/data/session`：持久化登录会话
+- `./data/qr:/data/qr`：持久化二维码文件
+
+#### 关键配置（docker/config.yaml）
+
+- `user_data_dir: "/data/session"`
+- `qr_output_path: "/data/qr"`
+- `mcp.transport: streamable_http`
+- `mcp.http_host: "0.0.0.0"`
+- `mcp.http_port: 8080`
+
+### 4. 常见问题排查
+
+#### 容器无法启动
+
+```bash
+docker compose logs --tail=200 boss_mcp
+```
+
+重点检查：
+
+- 端口冲突（`8080` 被占用）
+- 配置挂载路径错误
+- Dockerfile 构建依赖异常
+
+#### 外网无法访问
+
+- 检查云安全组/防火墙是否放行 `8080`
+- 确认 `docker/config.yaml` 中 `http_host` 为 `0.0.0.0`
+- 确认 compose 中存在端口映射
+
+#### 登录态丢失
+
+- 检查 `docker/data/session` 是否正确挂载、可写
+- 不要随意删除会话目录
+
+#### 二维码链接 404
+
+- 检查 `docker/data/qr` 目录下是否生成文件
+- 确认访问路径为 `/static/qr/<filename>`
+- 查看服务日志中的二维码输出信息
+
+#### 服务器架构不匹配
+
+当前 [docker/docker-compose.yml](docker/docker-compose.yml) 固定：
+
+- `platform: linux/arm64`
+
+若服务器是 x86_64，请改为 `linux/amd64` 或删除 `platform` 让 Docker 自动选择。
 
 ---
 
@@ -215,4 +356,4 @@ cargo run --bin qcc_search_company
 
 ## License
 
-可根据你的发布策略补充（如 MIT / Apache-2.0 / 私有协议）。
+MIT
