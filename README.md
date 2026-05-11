@@ -353,7 +353,3 @@ docker compose logs --tail=200 boss_mcp
 - 推荐将 `user_data_dir` 指向持久卷目录，避免重启后丢失登录态。
 
 ---
-
-## License
-
-MIT
