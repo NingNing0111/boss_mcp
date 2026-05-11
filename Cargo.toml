@@ -6,13 +6,13 @@ edition = "2024"
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
-rust_drission = "0.2.2"
+rust_drission = "0.2.5"
 anyhow = "1.0.102"
 base64 = "0.22.1"
 serde_json = "1"
 axum = { version = "0.8", default-features = false, features = ["http1", "tokio"] }
 tower = { version = "0.5", features = ["util"] }
-rmcp = { path = "projects/rust-sdk/crates/rmcp", features = ["server", "macros", "transport-io", "transport-streamable-http-server"] }
+rmcp = { version = "1.6.0", features = ["server", "macros", "transport-io", "transport-streamable-http-server"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "io-util"] }
 thiserror = "2"
 schemars = "1"
