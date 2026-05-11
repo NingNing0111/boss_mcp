@@ -8,7 +8,7 @@ use crate::{browser, qcc::model::CompanyInfo};
 pub fn search_company(keyword: &str) -> Result<Vec<CompanyInfo>, anyhow::Error> {
     let url = QCC_SEARCH.replace("{}", keyword);
 
-    let companies = browser::with_browser(|page| {
+    let companies = browser::with_qcc_tab(|page| {
         page.get(&url)?;
         sleep_random_ms(2000, 3000);
 

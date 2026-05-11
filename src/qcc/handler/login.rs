@@ -3,7 +3,7 @@ use std::{fs, path::PathBuf, time::Duration};
 use crate::{browser, qcc::QCC_SITE_URL};
 use anyhow::{Context, anyhow};
 use base64::Engine;
-use rust_drission::{ChromiumPage, utils::sleep_random_ms};
+use rust_drission::utils::sleep_random_ms;
 use serde_json::Value;
 
 use crate::config::AppConfig;
@@ -11,7 +11,7 @@ use crate::config::AppConfig;
 pub fn login(config: &AppConfig) -> Result<PathBuf, anyhow::Error> {
     let qr_output_path = config.qr_output_path().to_string();
 
-    let output_path = browser::with_browser(|page| {
+    let output_path = browser::with_qcc_tab(|page| {
         page.get(QCC_SITE_URL)?;
         sleep_random_ms(500, 800);
         page.click(".qcc-header-login-btn")?;
@@ -23,7 +23,7 @@ pub fn login(config: &AppConfig) -> Result<PathBuf, anyhow::Error> {
 }
 
 fn save_qr_image(
-    page: &ChromiumPage,
+    page: &rust_drission::Page,
     configured_output_path: &str,
 ) -> Result<PathBuf, anyhow::Error> {
     let script = r#"
@@ -41,8 +41,8 @@ fn save_qr_image(
         .run_js(script)
         .context("浏览器执行二维码导出脚本失败")?;
 
-    let (content_type, bytes) = decode_data_url(&data_url)?;
-    let output_path = qr_output_path(configured_output_path, content_type);
+    let (_, bytes) = decode_data_url(&data_url)?;
+    let output_path = qr_output_path(configured_output_path);
     if let Some(parent) = output_path
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
@@ -97,14 +97,14 @@ fn extract_js_string(value: &Value) -> Result<&str, anyhow::Error> {
         .ok_or_else(|| anyhow!("二维码导出结果不是字符串"))
 }
 
-fn qr_output_path(configured_output_path: &str, content_type: &str) -> PathBuf {
-    let extension = match content_type {
-        "image/png" => "png",
-        "image/jpeg" => "jpg",
-        "image/webp" => "webp",
-        "image/gif" => "gif",
-        _ => "bin",
+fn qr_output_path(configured_output_path: &str) -> PathBuf {
+    let path = PathBuf::from(configured_output_path);
+    let dir = if path.file_name().map_or(false, |n| {
+        n.to_string_lossy().contains('.')
+    }) {
+        path.parent().unwrap_or(&path).to_path_buf()
+    } else {
+        path
     };
-
-    PathBuf::from(configured_output_path).with_extension(extension)
+    dir.join("qr_code_qcc.png")
 }

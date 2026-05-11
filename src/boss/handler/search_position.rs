@@ -5,7 +5,7 @@ use anyhow::Context;
 use crate::{boss::model::PositionSimpleInfo, browser, utils::salary::decode_salary};
 
 pub fn search_position(search_url: &str) -> Result<Vec<PositionSimpleInfo>, anyhow::Error> {
-    let positions = browser::with_browser(|page| {
+    let positions = browser::with_boss_tab(|page| {
         page.get(search_url)?;
         page.wait(".rec-job-list", Duration::from_secs(5))?;
         let js_result = page.run_js(EXTRACT_JS)?;

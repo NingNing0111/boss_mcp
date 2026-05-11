@@ -1,6 +1,6 @@
 browser_exe_path: ""
 user_data_dir: "D:\\Code\\boss_mcp\\data\\Profile"
-qr_output_path: "D:\\Code\\boss_mcp\\data\\qr_code.png"
+qr_output_path: "D:\\Code\\boss_mcp\\data\\qr_code"
 mcp:
   # 传输类型
   #   - stdio: 标准输入输出模式，适合本地 CLI 工具集成

@@ -18,10 +18,9 @@ struct RawPositionDetail {
 
 // 获取岗位详情
 pub fn position_detail(detail_url: &str) -> Result<PositionDetail, anyhow::Error> {
-    let detail = browser::with_browser(|page| {
+    let detail = browser::with_new_tab(|page| {
         page.get(detail_url)?;
         page.wait(".job-detail", Duration::from_secs(5))?;
-
         let js_result = page.run_js(EXTRACT_JS)?;
         parse_detail(&js_result)
     })?;
@@ -104,13 +103,53 @@ fn parse_detail(js_result: &serde_json::Value) -> Result<PositionDetail, anyhow:
 }
 
 // 开始沟通
-pub fn start_chat(detail_url: &str) -> Result<(), anyhow::Error> {
-    browser::with_browser(|page| {
+pub fn start_chat(detail_url: &str, greeting: &str) -> Result<(), anyhow::Error> {
+    browser::with_boss_tab(|page| {
         page.get(detail_url)?;
-
+        page.wait(".job-op .btn.btn-startchat", Duration::from_secs(5))?;
+        page.click(".job-op .btn.btn-startchat")?;
         sleep_random_ms(1000, 1200);
-        page.click(".btn-container .btn-startchat")?;
+        let chat_list_card_ele = page.ele(".friend-content")?;
+        if chat_list_card_ele.is_none() {
+            // 如果没有跳转到沟通页 处理下面的流程
+            // 开始沟通
+            page.run_js(&format!(
+                r#"
+            (() => {{
+              const el = document.querySelector('textarea.input-area');
+              if (!el) {{
+                return;
+              }}
+              el.focus();
 
+              const text = {greeting:?};
+
+              const setter = Object.getOwnPropertyDescriptor(
+                HTMLTextAreaElement.prototype,
+                'value'
+              ).set;
+
+              setter.call(el, text);
+
+              el.dispatchEvent(new InputEvent('input', {{
+                bubbles: true,
+                inputType: 'insertText',
+                data: text
+              }}));
+
+              el.dispatchEvent(new Event('change', {{ bubbles: true }}));
+            }})();
+        "#
+            ))?;
+            page.click(".send-message")?;
+        } else {
+            page.run_js(&format!(
+                "document.querySelector('#chat-input').textContent = {};",
+                greeting.to_string()
+            ))?;
+            // 点击发送
+            page.click(".chat-op button")?;
+        }
         Ok(())
     })
 }

@@ -13,7 +13,7 @@ use serde_json::Value;
 // 验证码登录/注册
 // BOSS直聘APP扫码登录
 pub fn login(tp: LoginType, config: &AppConfig) -> Result<PathBuf, anyhow::Error> {
-    let output_path = browser::with_browser(|page| {
+    let output_path = browser::with_boss_tab(|page| {
         page.get(BOSS_LOGIN_PAGE_URL)?;
         sleep_random_ms(800, 1000);
         let title_ele = page.ele(".title")?;
@@ -21,7 +21,6 @@ pub fn login(tp: LoginType, config: &AppConfig) -> Result<PathBuf, anyhow::Error
         if tp == LoginType::QRCode && text.contains("验证码登录") {
             page.wait(".ewm-switch", Duration::from_secs(5))?;
             page.click(".ewm-switch")?;
-            println!("点击了QR");
         }
         sleep_random_ms(800, 1000);
 
@@ -32,7 +31,7 @@ pub fn login(tp: LoginType, config: &AppConfig) -> Result<PathBuf, anyhow::Error
 }
 
 fn save_qr_image(
-    page: &rust_drission::ChromiumPage,
+    page: &rust_drission::Page,
     configured_output_path: &str,
 ) -> Result<PathBuf, anyhow::Error> {
     let img = page
@@ -40,6 +39,7 @@ fn save_qr_image(
         .ok_or_else(|| anyhow!("未找到二维码图片元素"))?;
 
     let src = img.attr("src")?;
+    let _ = src;
 
     let script = format!(
         r#"
@@ -71,8 +71,8 @@ fn save_qr_image(
         .run_js_await(&script)
         .context("浏览器执行二维码导出脚本失败")?;
 
-    let (content_type, bytes) = decode_data_url(&data_url)?;
-    let output_path = qr_output_path(configured_output_path, content_type);
+    let (_, bytes) = decode_data_url(&data_url)?;
+    let output_path = qr_output_path(configured_output_path);
     if let Some(parent) = output_path
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
@@ -127,16 +127,17 @@ fn extract_js_string(value: &Value) -> Result<&str, anyhow::Error> {
         .ok_or_else(|| anyhow!("二维码导出结果不是字符串"))
 }
 
-fn qr_output_path(configured_output_path: &str, content_type: &str) -> std::path::PathBuf {
-    let extension = match content_type {
-        "image/png" => "png",
-        "image/jpeg" => "jpg",
-        "image/webp" => "webp",
-        "image/gif" => "gif",
-        _ => "bin",
+fn qr_output_path(configured_output_path: &str) -> PathBuf {
+    let path = PathBuf::from(configured_output_path);
+    let dir = if path.file_name().map_or(false, |n| {
+        n.to_string_lossy().contains('.')
+    }) {
+        // 如果看起来像文件名（有扩展名），取其父目录
+        path.parent().unwrap_or(&path).to_path_buf()
+    } else {
+        path
     };
-
-    PathBuf::from(configured_output_path).with_extension(extension)
+    dir.join("qr_code_boss.png")
 }
 
 #[cfg(test)]
@@ -144,14 +145,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn keeps_png_extension_for_png_content() {
-        let path = qr_output_path("/data/qr/qr_code.png", "image/png");
-        assert_eq!(path, PathBuf::from("/data/qr/qr_code.png"));
+    fn uses_fixed_filename_for_directory_path() {
+        let path = qr_output_path("/data/qr/");
+        assert_eq!(path, PathBuf::from("/data/qr/qr_code_boss.png"));
     }
 
     #[test]
-    fn rewrites_extension_for_jpeg_content() {
-        let path = qr_output_path("/data/qr/qr_code.png", "image/jpeg");
-        assert_eq!(path, PathBuf::from("/data/qr/qr_code.jpg"));
+    fn extracts_directory_from_file_path() {
+        let path = qr_output_path("/data/qr/qr_code.png");
+        assert_eq!(path, PathBuf::from("/data/qr/qr_code_boss.png"));
     }
 }

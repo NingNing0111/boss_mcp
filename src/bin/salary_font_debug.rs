@@ -53,7 +53,7 @@ const SALARY_DEBUG_JS: &str = r#"
 "#;
 
 fn debug_salary_font(search_url: &str) -> Result<SalaryDebugInfo, anyhow::Error> {
-    let salary_info = browser::with_browser(|page| {
+    let salary_info = browser::with_boss_tab(|page| {
         page.get(search_url)?;
         page.wait(".job-salary", Duration::from_secs(5))?;
         let js_result = page.run_js(SALARY_DEBUG_JS)?;

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use anyhow::{Context, anyhow};
-use rust_drission::{ChromiumPage, utils::sleep_random_ms};
+use rust_drission::utils::sleep_random_ms;
 
 use crate::{
     boss::{
@@ -13,10 +13,10 @@ use crate::{
 
 // 消息通知监听 — 返回"未读"标签下的所有聊天条目
 pub fn get_unread_chat() -> Result<Vec<UnreadChat>, anyhow::Error> {
-    let unread_chat_data = browser::with_browser(|page| {
+    let unread_chat_data = browser::with_boss_tab(|page| {
         page.get(BOSS_CHAT_URL)?;
         sleep_random_ms(1200, 1500);
-        click_label(&page, "全部")?;
+        click_label(page, "全部")?;
         sleep_random_ms(1200, 1500);
         let js_result = page.run_js(EXTRACT_JS)?;
         parse_unread_chats(&js_result)
@@ -36,7 +36,7 @@ fn parse_unread_chats(js_result: &serde_json::Value) -> Result<Vec<UnreadChat>, 
 }
 
 // 点击不同 label 的聊天
-fn click_label(page: &ChromiumPage, name: &str) -> Result<(), anyhow::Error> {
+fn click_label(page: &rust_drission::Page, name: &str) -> Result<(), anyhow::Error> {
     let label_name_eles = page.eles(".label-list .label-name")?;
 
     for label_name_ele in label_name_eles {
@@ -111,7 +111,7 @@ const EXTRACT_JS: &str = r#"
 // 聊天消息接口：https://www.zhipin.com/wapi/zpchat/geek/historyMsg
 // 响应数据参考：src/boss/handler/chat_history_resp.json
 pub fn get_unread_chat_message(idx: usize) -> Result<Vec<ChatMessage>, anyhow::Error> {
-    browser::with_browser(|page| {
+    browser::with_boss_tab(|page| {
         // page.get(BOSS_CHAT_URL)?;
         // sleep_random_ms(700, 1000);
         // click_label(page, "未读")?;

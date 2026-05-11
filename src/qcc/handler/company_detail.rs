@@ -5,7 +5,7 @@ use serde::Deserialize;
 use crate::{browser, qcc::model::CompanyDetail};
 
 pub fn company_detail(detail_url: &str) -> Result<CompanyDetail, anyhow::Error> {
-    let detail = browser::with_browser(|page| {
+    let detail = browser::with_new_tab(|page| {
         page.get(detail_url)?;
         sleep_random_ms(2000, 3000);
 

@@ -3,11 +3,11 @@ use crate::{
     browser,
 };
 use anyhow::{Context, anyhow};
-use rust_drission::{ChromiumPage, utils::sleep_random_ms};
+use rust_drission::utils::sleep_random_ms;
 use serde_json::{Value, json};
 
 pub fn login_check() -> Result<Value, anyhow::Error> {
-    let verify_result = browser::with_browser(|page| verify_login(&*page));
+    let verify_result = browser::with_boss_tab(verify_login);
     let output = build_login_check_output(
         verify_result.map_err(|e| anyhow!("登录状态异常:{}", summarize_error(&e))),
     );
@@ -15,7 +15,7 @@ pub fn login_check() -> Result<Value, anyhow::Error> {
     Ok(output)
 }
 
-fn verify_login(page: &ChromiumPage) -> Result<Value, anyhow::Error> {
+fn verify_login(page: &rust_drission::Page) -> Result<Value, anyhow::Error> {
     page.get(BOSS_LOGIN_PAGE_URL)?;
     sleep_random_ms(1200, 2000);
     let body_text = fetch_via_page_js(page, BOSS_ACCOUNT_VERIFY_API)?;
@@ -26,7 +26,7 @@ fn verify_login(page: &ChromiumPage) -> Result<Value, anyhow::Error> {
     parse_verify_response(&body_text)
 }
 
-fn fetch_via_page_js(page: &ChromiumPage, url: &str) -> Result<String, anyhow::Error> {
+fn fetch_via_page_js(page: &rust_drission::Page, url: &str) -> Result<String, anyhow::Error> {
     let script = build_fetch_script(url);
     let result = page.run_js_await(&script)?;
     result

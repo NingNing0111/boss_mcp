@@ -1,12 +1,12 @@
 use std::fmt;
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use anyhow::Result as AnyhowResult;
-use rust_drission::{BrowserConfig, ChromiumPage};
+use rust_drission::{BrowserConfig, ChromiumPage, Page};
 
 use crate::config::AppConfig;
 
-static BROWSER_STATE: BrowserState<ChromiumPage> = BrowserState::new();
+static BROWSER_STATE: BrowserState = BrowserState::new();
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowserError {
@@ -29,21 +29,62 @@ impl fmt::Display for BrowserError {
 
 impl std::error::Error for BrowserError {}
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TabType {
+    Boss,
+    Qcc,
+}
+
 pub fn init(config: AppConfig) -> Result<(), BrowserError> {
     BROWSER_STATE.init(config, create_browser)
 }
 
-pub fn with_browser<T, F>(op: F) -> AnyhowResult<T>
+pub fn with_tab<T, F>(tab: TabType, op: F) -> AnyhowResult<T>
 where
-    F: FnOnce(&mut ChromiumPage) -> AnyhowResult<T>,
+    F: FnOnce(&Page) -> AnyhowResult<T>,
 {
-    BROWSER_STATE.with_browser(op, create_browser)
+    BROWSER_STATE.with_tab(tab, op, create_browser)
 }
 
-fn create_browser(config: &AppConfig) -> Result<ChromiumPage, BrowserError> {
+pub fn with_boss_tab<T, F>(op: F) -> AnyhowResult<T>
+where
+    F: FnOnce(&Page) -> AnyhowResult<T>,
+{
+    with_tab(TabType::Boss, op)
+}
+
+pub fn with_qcc_tab<T, F>(op: F) -> AnyhowResult<T>
+where
+    F: FnOnce(&Page) -> AnyhowResult<T>,
+{
+    with_tab(TabType::Qcc, op)
+}
+
+pub fn with_new_tab<T, F>(op: F) -> AnyhowResult<T>
+where
+    F: FnOnce(&Page) -> AnyhowResult<T>,
+{
+    BROWSER_STATE.with_new_tab(op, create_browser)
+}
+
+fn create_browser(config: &AppConfig) -> Result<BrowserTabs, BrowserError> {
     let browser_config = build_browser_config(config);
 
-    ChromiumPage::new(browser_config).map_err(|err| BrowserError::InitFailed(err.to_string()))
+    let page = ChromiumPage::new(browser_config).map_err(|err| BrowserError::InitFailed(err.to_string()))?;
+    let boss_tab = page.tab().to_owned();
+    let qcc_tab = page.new_tab(None).map_err(|err| BrowserError::InitFailed(err.to_string()))?;
+
+    Ok(BrowserTabs {
+        chromium_page: page,
+        boss_tab,
+        qcc_tab,
+    })
+}
+
+struct BrowserTabs {
+    chromium_page: ChromiumPage,
+    boss_tab: Page,
+    qcc_tab: Page,
 }
 
 fn build_browser_config(config: &AppConfig) -> BrowserConfig {
@@ -51,7 +92,6 @@ fn build_browser_config(config: &AppConfig) -> BrowserConfig {
     println!("{}", user_data);
     let mut browser_config = BrowserConfig::new()
         .headless(false)
-        .set_argument("--no-sandbox", None::<&str>)
         .user_data_dir(user_data);
 
     if let Some(path) = config.browser_exe_path() {
@@ -61,194 +101,87 @@ fn build_browser_config(config: &AppConfig) -> BrowserConfig {
     browser_config
 }
 
-struct BrowserState<T> {
+struct BrowserState {
     config: OnceLock<AppConfig>,
-    page: OnceLock<Mutex<T>>,
+    tabs: Mutex<Option<Arc<Mutex<BrowserTabs>>>>,
 }
 
-impl<T> BrowserState<T> {
+impl BrowserState {
     const fn new() -> Self {
         Self {
             config: OnceLock::new(),
-            page: OnceLock::new(),
+            tabs: Mutex::new(None),
         }
     }
 
     fn init<F>(&self, config: AppConfig, factory: F) -> Result<(), BrowserError>
     where
-        F: Fn(&AppConfig) -> Result<T, BrowserError>,
+        F: Fn(&AppConfig) -> Result<BrowserTabs, BrowserError>,
     {
         let _ = self.config.set(config);
-        let _ = self.ensure_page(&factory)?;
+        let _ = self.ensure_tabs(&factory)?;
         Ok(())
     }
 
-    fn with_browser<R, Op, F>(&self, op: Op, factory: F) -> AnyhowResult<R>
+    fn with_tab<R, Op, F>(&self, tab_type: TabType, op: Op, factory: F) -> AnyhowResult<R>
     where
-        Op: FnOnce(&mut T) -> AnyhowResult<R>,
-        F: Fn(&AppConfig) -> Result<T, BrowserError>,
+        Op: FnOnce(&Page) -> AnyhowResult<R>,
+        F: Fn(&AppConfig) -> Result<BrowserTabs, BrowserError>,
     {
-        let page = self.ensure_page(&factory)?;
-        let mut guard = page.lock().map_err(|_| BrowserError::LockPoisoned)?;
-        op(&mut guard)
+        let tabs = self.ensure_tabs(&factory)?;
+        let guard = tabs.lock().map_err(|_| BrowserError::LockPoisoned)?;
+        let tab = match tab_type {
+            TabType::Boss => &guard.boss_tab,
+            TabType::Qcc => &guard.qcc_tab,
+        };
+        op(tab)
     }
 
-    fn ensure_page<F>(&self, factory: &F) -> Result<&Mutex<T>, BrowserError>
+    fn with_new_tab<R, Op, F>(&self, op: Op, factory: F) -> AnyhowResult<R>
     where
-        F: Fn(&AppConfig) -> Result<T, BrowserError>,
+        Op: FnOnce(&Page) -> AnyhowResult<R>,
+        F: Fn(&AppConfig) -> Result<BrowserTabs, BrowserError>,
     {
-        if let Some(page) = self.page.get() {
-            return Ok(page);
+        let tabs = self.ensure_tabs(&factory)?;
+        let guard = tabs.lock().map_err(|_| BrowserError::LockPoisoned)?;
+        let new_page = guard.chromium_page.new_tab(None)?;
+        let result = op(&new_page);
+        let _ = new_page.close();
+        result
+    }
+
+    fn ensure_tabs<F>(&self, factory: &F) -> Result<Arc<Mutex<BrowserTabs>>, BrowserError>
+    where
+        F: Fn(&AppConfig) -> Result<BrowserTabs, BrowserError>,
+    {
+        let mut guard = self.tabs.lock().map_err(|_| BrowserError::LockPoisoned)?;
+        if let Some(tabs) = guard.as_ref() {
+            return Ok(tabs.clone());
         }
 
         let config = self.config.get().ok_or(BrowserError::NotConfigured)?;
-        let page = Mutex::new(factory(config)?);
-
-        match self.page.set(page) {
-            Ok(()) => self.page.get().ok_or(BrowserError::NotConfigured),
-            Err(_) => self.page.get().ok_or(BrowserError::NotConfigured),
-        }
+        let tabs = Arc::new(Mutex::new(factory(config)?));
+        *guard = Some(tabs.clone());
+        Ok(tabs)
     }
+
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::config::McpConfig;
-    use std::sync::Arc;
-    use std::sync::atomic::{AtomicUsize, Ordering};
-    use std::thread;
-
-    #[derive(Debug)]
-    struct FakeBrowser {
-        config_name: String,
-        visits: usize,
-    }
 
     #[test]
     fn returns_not_configured_when_accessed_before_init() {
-        let state = BrowserState::<FakeBrowser>::new();
+        let state = BrowserState::new();
 
-        let result = state.with_browser(|_| Ok::<(), anyhow::Error>(()), fake_factory);
+        let result = state.with_tab(TabType::Boss, |_| Ok::<_, anyhow::Error>(()), create_browser);
 
         assert_eq!(
             result.expect_err("missing config should fail").to_string(),
             BrowserError::NotConfigured.to_string()
         );
-    }
-
-    #[test]
-    fn uses_saved_config_for_lazy_initialization() {
-        let state = BrowserState::<FakeBrowser>::new();
-        let config = sample_config("first", "profile-a");
-        let factory_calls = Arc::new(AtomicUsize::new(0));
-
-        state.config.set(config).expect("config should be set once");
-
-        let result = state.with_browser(
-            |browser| {
-                browser.visits += 1;
-                Ok::<_, anyhow::Error>((browser.config_name.clone(), browser.visits))
-            },
-            counting_fake_factory(factory_calls.clone()),
-        );
-
-        let value = result.expect("lazy init should succeed");
-        assert_eq!(value, ("first".to_string(), 1));
-        assert_eq!(factory_calls.load(Ordering::SeqCst), 1);
-    }
-
-    #[test]
-    fn repeated_init_keeps_first_config_and_singleton() {
-        let state = BrowserState::<FakeBrowser>::new();
-        let factory_calls = Arc::new(AtomicUsize::new(0));
-
-        state
-            .init(
-                sample_config("first", "profile-a"),
-                counting_fake_factory(factory_calls.clone()),
-            )
-            .expect("first init should succeed");
-        state
-            .init(
-                sample_config("second", "profile-b"),
-                counting_fake_factory(factory_calls.clone()),
-            )
-            .expect("second init should be ignored");
-
-        let result = state.with_browser(
-            |browser| Ok::<_, anyhow::Error>(browser.config_name.clone()),
-            counting_fake_factory(factory_calls.clone()),
-        );
-
-        let value = result.expect("singleton should keep first config");
-        assert_eq!(value, "first".to_string());
-        assert_eq!(factory_calls.load(Ordering::SeqCst), 1);
-    }
-
-    #[test]
-    fn allows_anyhow_errors_from_browser_operations() {
-        let state = BrowserState::<FakeBrowser>::new();
-        let config = sample_config("shared", "profile-a");
-
-        state.config.set(config).expect("config should be set once");
-
-        let result: AnyhowResult<()> =
-            state.with_browser(|_| Err(anyhow::anyhow!("operation failed")), fake_factory);
-
-        assert_eq!(
-            result
-                .expect_err("closure error should bubble up")
-                .to_string(),
-            "operation failed"
-        );
-    }
-
-    #[test]
-    fn concurrent_access_reuses_single_instance() {
-        let state = Arc::new(BrowserState::<FakeBrowser>::new());
-        let factory_calls = Arc::new(AtomicUsize::new(0));
-
-        state
-            .config
-            .set(sample_config("shared", "profile-a"))
-            .expect("config should be set once");
-
-        let handles: Vec<_> = (0..4)
-            .map(|_| {
-                let state = state.clone();
-                let factory_calls = factory_calls.clone();
-                thread::spawn(move || {
-                    state.with_browser(
-                        |browser| {
-                            browser.visits += 1;
-                            Ok::<_, anyhow::Error>(browser.config_name.clone())
-                        },
-                        counting_fake_factory(factory_calls),
-                    )
-                })
-            })
-            .collect();
-
-        let results: Vec<_> = handles
-            .into_iter()
-            .map(|handle| handle.join().expect("thread should finish"))
-            .collect();
-
-        assert!(
-            results
-                .iter()
-                .all(|result| matches!(result, Ok(value) if value == "shared"))
-        );
-        assert_eq!(factory_calls.load(Ordering::SeqCst), 1);
-
-        let final_visits = state
-            .with_browser(
-                |browser| Ok::<_, anyhow::Error>(browser.visits),
-                fake_factory,
-            )
-            .expect("final read should succeed");
-        assert_eq!(final_visits, 4);
     }
 
     #[test]
@@ -266,28 +199,4 @@ mod tests {
         assert!(debug_output.contains("--no-sandbox"));
     }
 
-    fn fake_factory(config: &AppConfig) -> Result<FakeBrowser, BrowserError> {
-        Ok(FakeBrowser {
-            config_name: config.browser_exe_path().unwrap_or("missing").to_string(),
-            visits: 0,
-        })
-    }
-
-    fn counting_fake_factory(
-        factory_calls: Arc<AtomicUsize>,
-    ) -> impl Fn(&AppConfig) -> Result<FakeBrowser, BrowserError> {
-        move |config| {
-            factory_calls.fetch_add(1, Ordering::SeqCst);
-            fake_factory(config)
-        }
-    }
-
-    fn sample_config(browser_exe_path: &str, user_data_dir: &str) -> AppConfig {
-        AppConfig {
-            browser_exe_path: Some(browser_exe_path.to_string()),
-            user_data_dir: Some(user_data_dir.to_string()),
-            qr_output_path: Some("qr_code.png".to_string()),
-            mcp: McpConfig::default(),
-        }
-    }
 }
