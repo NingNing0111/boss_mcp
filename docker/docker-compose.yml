@@ -1,18 +1,16 @@
 services:
-  boss-mcp-login-dn:
-    image: boss-mcp-login
-    container_name: boss-mcp-login-dn
+  boss_mcp:
+    platform: linux/arm64
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: boss_mcp
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
     volumes:
-      - ../dn_data:/data
-
-  boss-mcp-login-yh:
-    image: boss-mcp-login
-    container_name: boss-mcp-login-yh
-    volumes:
-      - ../yh_data:/data
-
-  boss-mcp-login-wd:
-    image: boss-mcp-login
-    container_name: boss-mcp-login-wd
-    volumes:
-      - ../wd_data:/data
+      - ./config.yaml:/app/config.yaml:ro
+      - ./data/session:/data/session
+      - ./data/qr:/data/qr
+    environment:
+      - TZ=Asia/Shanghai

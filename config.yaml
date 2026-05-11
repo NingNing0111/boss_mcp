@@ -1,6 +1,6 @@
 browser_exe_path: ""
-user_data_dir: "D:\\Code\\boss_mcp\\data\\Profile"
-qr_output_path: "D:\\Code\\boss_mcp\\data\\qr_code"
+user_data_dir: "data/Profile"
+qr_output_path: "data/qr_code"
 mcp:
   # 传输类型
   #   - stdio: 标准输入输出模式，适合本地 CLI 工具集成
@@ -17,3 +17,8 @@ mcp:
   #   - 默认: 8080
   #   - 可根据需要修改为其他端口
   http_port: 8080
+
+  # 对外可访问的基地址（用于拼接二维码等静态资源 URL）
+  #   - Docker 部署时设置为宿主机可访问的地址，如 http://your-host:8080
+  #   - 留空则自动使用 http://{http_host}:{http_port}
+  public_base_url: ""

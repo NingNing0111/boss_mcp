@@ -1,3 +1,20 @@
 browser_exe_path: ""
 user_data_dir: "/data/session"
-qr_output_path: "/data/qr/qr_code.png"
+qr_output_path: "/data/qr"
+
+mcp:
+  # 传输类型
+  #   - stdio: 标准输入输出模式，适合本地 CLI 工具集成
+  #   - streamable_http: HTTP 流式传输模式，适合网络远程调用
+  #   注意：当前版本 stdio 模式尚未实现，默认使用 streamable_http
+  transport: streamable_http
+
+  # HTTP 监听地址（仅 streamable_http 模式生效）
+  #   - 默认: "127.0.0.1"
+  #   - 改为 "0.0.0.0" 可接受外部连接（注意安全风险）
+  http_host: "0.0.0.0"
+
+  # HTTP 监听端口（仅 streamable_http 模式生效）
+  #   - 默认: 8080
+  #   - 可根据需要修改为其他端口
+  http_port: 8080

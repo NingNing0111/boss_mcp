@@ -17,6 +17,8 @@ mcp:
   http_port: 8080
   # HTTP 监听地址
   http_host: \"127.0.0.1\"
+  # 对外可访问的基地址（用于拼接静态资源 URL，留空则使用 http://{http_host}:{http_port}）
+  public_base_url: \"\"
 ";
 const DEFAULT_USER_DATA_DIR: &str = "default";
 const DEFAULT_QR_OUTPUT_PATH: &str = "qr_code.png";
@@ -37,6 +39,7 @@ pub struct McpConfig {
     pub transport: TransportType,
     pub http_port: u16,
     pub http_host: String,
+    pub public_base_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -46,12 +49,22 @@ pub enum TransportType {
     StreamableHttp,
 }
 
+impl McpConfig {
+    pub fn public_base_url(&self) -> String {
+        match self.public_base_url.as_deref() {
+            Some(url) if !url.is_empty() => url.trim_end_matches('/').to_string(),
+            _ => format!("http://{}:{}", self.http_host, self.http_port),
+        }
+    }
+}
+
 impl Default for McpConfig {
     fn default() -> Self {
         Self {
             transport: TransportType::StreamableHttp,
             http_port: 8080,
             http_host: "127.0.0.1".to_string(),
+            public_base_url: None,
         }
     }
 }

@@ -111,6 +111,19 @@ fn validate_keyword(keyword: &str) -> Result<&str, ErrorData> {
     Ok(keyword)
 }
 
+fn path_to_http_url(path: &str) -> String {
+    let config = load_or_create(Path::new("config.yaml"));
+    let base_url = config
+        .as_ref()
+        .map(|c| c.mcp.public_base_url())
+        .unwrap_or_else(|_| "http://127.0.0.1:8080".to_string());
+    let filename = Path::new(path)
+        .file_name()
+        .map(|f| f.to_string_lossy().to_string())
+        .unwrap_or_else(|| path.to_string());
+    format!("{}/static/qr/{}", base_url, filename)
+}
+
 #[tool_router]
 impl RecruitmentServer {
     #[tool(description = "检查当前 Boss 直聘登录状态。\
@@ -137,9 +150,10 @@ impl RecruitmentServer {
             .map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
         let path = boss_login(params.login_type, &config)
             .map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
+        let url = path_to_http_url(&path.to_string_lossy());
         json_text(&serde_json::json!({
             "tab": BOSS_TAB_ID,
-            "login_output_path": path,
+            "login_output_path": url,
         }))
     }
 
@@ -275,9 +289,10 @@ impl RecruitmentServer {
             .map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
         let path =
             qcc_login(&config).map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
+        let url = path_to_http_url(&path.to_string_lossy());
         json_text(&serde_json::json!({
             "tab": QCC_TAB_ID,
-            "login_output_path": path,
+            "login_output_path": url,
         }))
     }
 
